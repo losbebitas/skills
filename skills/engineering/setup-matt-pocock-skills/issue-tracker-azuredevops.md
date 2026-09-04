@@ -35,7 +35,7 @@ The current iteration is team-specific and changes over time. Do not save a fixe
 ```bash
 azdo-cli-axi board sprints \
   --team "<TEAM_ID>" \
-  --fields id,name,path,attributes.timeFrame \
+  --fields path,attributes.timeFrame \
   --full \
   --org "$ORG_URL" \
   --project "$PROJECT"
