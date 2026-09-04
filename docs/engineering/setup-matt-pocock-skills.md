@@ -1,6 +1,6 @@
 ## What it does
 
-`setup-matt-pocock-skills` answers three questions about one repo: where issues live, what the triage labels are called, and where the domain docs sit. It records the answers as markdown files under `docs/agents/`.
+`setup-matt-pocock-skills` answers three standard questions about one repo: where issues live, what the triage labels are called, and where the domain docs sit. When Azure DevOps is selected, it also confirms the organization, project, and the project's User Story and Feature process states. It records the answers as markdown files under `docs/agents/`.
 
 Those files are the only thing that varies between repos. The skills themselves are identical everywhere; they read `docs/agents/issue-tracker.md` at run time and do what it says. That is why the set is not tied to GitHub, and why no skill file ever needs editing to point it somewhere else. Invoking it with "link the skills to a custom issue tracker" works with anything you can connect to programmatically, with zero changes to the skills.
 
@@ -25,15 +25,18 @@ It writes into the repo you run it in:
 
 All of it is committed markdown. There is no user-level or global mode: the config lives in the repo, so every repo gets its own copy.
 
-## The three decisions
+## The setup decisions
 
-It leads each section with the recommended answer, and skips whatever exploration already settled. Most runs are two confirmations and done.
+It leads each section with the recommended answer, and skips whatever exploration already settled. Most runs are two confirmations and done; Azure DevOps adds context and process-state confirmations.
 
 | Decision | What it proposes | When it actually asks |
 | --- | --- | --- |
 | **Issue tracker** | the one matching your `git remote` | always: this is the one real choice |
 | **Triage labels** | keep the five canonical names (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`) | only if the `triage` skill is installed |
+| **Azure DevOps process** | the states returned by `azdo-cli-axi board states`, with normal-completion and rejected/out-of-scope mappings | only when Azure DevOps is selected |
 | **Domain docs** | single-context: one `CONTEXT.md` plus `docs/adr/` at the root | only if it spots monorepo signals, and then it offers a multi-context `CONTEXT-MAP.md` |
+
+For Azure DevOps, the setup derives the organization and project from the Azure remote when possible and asks the user to validate them. It then reads User Story and Feature states separately, asks the user to confirm or correct each process, and stores the complete confirmed state/category tables and mappings in `docs/agents/issue-tracker.md`. Later skill runs use that configuration rather than querying Azure again.
 
 The tracker options:
 

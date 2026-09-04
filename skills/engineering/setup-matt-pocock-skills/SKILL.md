@@ -10,6 +10,7 @@ Scaffold the per-repo configuration that the engineering skills assume:
 
 - **Issue tracker**: where issues live (GitHub by default; local markdown is also supported out of the box)
 - **Triage labels**: the strings used for the five canonical triage roles
+- **Azure DevOps process**: the selected project's User Story and Feature states, when Azure DevOps is selected
 - **Domain docs**: where `CONTEXT.md` and ADRs live, and the consumer rules for reading them
 
 This is a prompt-driven skill, not a deterministic script. Explore, present what you found, confirm with the user, then write.
@@ -27,6 +28,7 @@ Look at the current repo to understand its starting state. Read whatever exists;
 - `docs/agents/`: does this skill's prior output already exist?
 - `.scratch/`: a sign that a local-markdown issue tracker convention is already in use
 - Is the `triage` skill installed? (a `triage` skill folder alongside this one, or `triage` in your available skills.) This decides whether Section B runs at all.
+- If Azure DevOps is selected or detected, inspect the Azure DevOps remote in `.git/config` for the organization and project. Use `azdo-cli-axi board states --type "User Story"` and `azdo-cli-axi board states --type "Feature"` with the detected context to read the project's actual process states and categories.
 - Monorepo signals: a `pnpm-workspace.yaml`, a `workspaces` field in `package.json`, or a populated `packages/*` with its own `src/`. These are present only in a genuinely large multi-package repo; their absence means single-context, which is almost every repo.
 
 ### 2. Present findings and ask
@@ -49,6 +51,25 @@ Default posture: these skills were designed for GitHub. If a `git remote` points
 
 Record the choice in `docs/agents/issue-tracker.md`. The GitHub, GitLab, and Azure DevOps templates carry a "PRs as a request surface" flag, defaulted **off**. Leave it off and don't raise it: a user who wants external PRs in the triage queue can flip the flag in the file later.
 
+When Azure DevOps is selected, continue Section A with the Azure DevOps context and process confirmation. If an Azure DevOps remote is present, derive the organization URL and project from `.git/config` and propose them; do not ask the user to retype values already present in the remote. If the remote is absent or does not identify an Azure DevOps project, ask for the organization URL and project.
+
+> Azure DevOps context: organization `<ORG_URL>`, project `<PROJECT>`. Is this correct? (recommended: **yes**)
+
+After the context is confirmed, run:
+
+```sh
+azdo-cli-axi board states --type "User Story" --org "$ORG_URL" --project "$PROJECT"
+azdo-cli-axi board states --type "Feature" --org "$ORG_URL" --project "$PROJECT"
+```
+
+Show the returned state names and Azure categories without inventing, renaming, or omitting values. Ask two separate confirmations:
+
+> User Story process: `<state/category list>`. Normal completion: `<state>`. Rejected or out-of-scope: `<state>`. Is this correct? (recommended: **yes**)
+
+> Feature process: `<state/category list>`. Normal completion: `<state>`. Rejected or out-of-scope: `<state>`. Is this correct? (recommended: **yes**)
+
+Use a state in the `Completed` category as the recommended normal completion and a state in the `Removed` category as the recommended rejection state only when there is exactly one candidate. If there are no candidates or multiple candidates, ask the user to choose or provide the mapping. If the user rejects either proposal, let them correct the state names, categories, and the normal/rejected mappings manually. Do not hard-code `Done`, `Released`, `Removed`, or any other project's values. The confirmed organization, project, complete state/category lists, and mappings are written into the Azure DevOps issue-tracker configuration. Do not re-query Azure on later skill invocations; use this saved configuration until the user explicitly reruns setup.
+
 **Section B: Triage label vocabulary.** Skip this section entirely if the `triage` skill isn't installed (exploration told you), since an uninstalled skill needs no labels.
 
 If it is installed, ask exactly one question:
@@ -67,6 +88,7 @@ Show the user a draft of:
 
 - The `## Agent skills` block to add to whichever of `CLAUDE.md` / `AGENTS.md` is being edited (see step 4 for selection rules)
 - The contents of `docs/agents/issue-tracker.md`, `docs/agents/domain.md`, and `docs/agents/triage-labels.md` (the last only when `triage` is installed)
+- For Azure DevOps, the detected context and the confirmed User Story/Feature process-state tables and mappings
 
 Let them edit before writing.
 
@@ -112,6 +134,8 @@ Then write the docs files using the seed templates in this skill folder as a sta
 - [domain.md](./domain.md): domain doc consumer rules + layout
 
 For "other" issue trackers, write `docs/agents/issue-tracker.md` from scratch using the user's description.
+
+For Azure DevOps, fill the context and process-state section in `docs/agents/issue-tracker.md` with the confirmed organization, project, state/category lists, normal-completion states, and rejected/out-of-scope states. Do not leave seed placeholders or substitute example states. Preserve the exact confirmed state names for downstream commands.
 
 ### 5. Done
 

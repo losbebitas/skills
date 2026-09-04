@@ -2,6 +2,31 @@
 
 Issues and specs for this repo live as Azure Boards User Stories and Features. Use the `azdo-cli-axi` CLI for all operations.
 
+## Azure DevOps context
+
+The setup skill fills this section with values confirmed for this project. Use these exact names; do not substitute states from another Azure DevOps project.
+
+- **Organization**: `<ORG_URL>`
+- **Project**: `<PROJECT>`
+
+### User Story process
+
+| State | Category |
+| --- | --- |
+| `<state>` | `<category>` |
+
+- **Normal completion**: `<confirmed state>`
+- **Rejected or out of scope**: `<confirmed state>`
+
+### Feature process
+
+| State | Category |
+| --- | --- |
+| `<state>` | `<category>` |
+
+- **Normal completion**: `<confirmed state>`
+- **Rejected or out of scope**: `<confirmed state>`
+
 ## Conventions
 
 - **Create an issue**: `azdo-cli-axi issue create --title "..." --body "..." --org "$ORG_URL" --project "$PROJECT"`. An issue is a User Story. Use a heredoc for multi-line bodies.
@@ -10,7 +35,7 @@ Issues and specs for this repo live as Azure Boards User Stories and Features. U
 - **Read a spec**: `azdo-cli-axi spec view <id> --expand none --fields "System.Id,System.Title,System.State,System.Tags,System.Description" --org "$ORG_URL" --project "$PROJECT"`, with the same comments API.
 - **List issues**: `azdo-cli-axi issue list --state "<User Story state>" --limit 50 --org "$ORG_URL" --project "$PROJECT"`.
 - **List specs**: `azdo-cli-axi spec list --state "<Feature state>" --limit 50 --org "$ORG_URL" --project "$PROJECT"`.
-- **Triage**: use `azdo-cli-axi query --wiql "SELECT [System.Id],[System.Title],[System.State],[System.Tags] FROM WorkItems WHERE [System.WorkItemType] = 'User Story' AND [System.State] NOT IN ('Done','Removed') AND [System.Tags] CONTAINS 'needs-triage' ORDER BY [System.ChangedDate] DESC" --org "$ORG_URL" --project "$PROJECT"`. `query triage` filters tags but does not exclude terminal states. Use `NOT IN ('Released','Removed')` for Features. Discover states with `azdo-cli-axi board states --type "User Story" --org "$ORG_URL" --project "$PROJECT"` and `azdo-cli-axi board states --type "Feature" --org "$ORG_URL" --project "$PROJECT"`.
+- **Triage**: use `azdo-cli-axi query --wiql "..." --org "$ORG_URL" --project "$PROJECT"` with `[System.State] NOT IN (...)` using the completed and removed states recorded above. `query triage` filters tags but does not exclude terminal states.
 - **Comment on an issue**: `azdo-cli-axi issue discussion <id> --discussion "..." --org "$ORG_URL" --project "$PROJECT"`.
 - **Comment on a spec**: `azdo-cli-axi spec discussion <id> --discussion "..." --org "$ORG_URL" --project "$PROJECT"`.
 - **Apply / remove tags**: `azdo-cli-axi issue tag <id> --tag "..." --org "$ORG_URL" --project "$PROJECT"` / `azdo-cli-axi issue edit <id> --fields "System.Tags=tag-a; tag-b" --org "$ORG_URL" --project "$PROJECT"`, or use the corresponding `spec` commands. Preserve unrelated tags when replacing the complete list. Triage roles (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`) are tags, not states.
@@ -18,9 +43,9 @@ Issues and specs for this repo live as Azure Boards User Stories and Features. U
 - **Parent / child**: create the Feature first, create the User Story, then link it with `azdo-cli-axi spec relation <feature-id> --relation-action add --relation-type child --target-id <user-story-id> --org "$ORG_URL" --project "$PROJECT"`.
 - **Predecessor / successor**: if User Story 1 must precede User Story 2, use `azdo-cli-axi issue relation <story-2-id> --relation-action add --relation-type predecessor --target-id <story-1-id> --org "$ORG_URL" --project "$PROJECT"`. The reciprocal relation is the successor. The equivalent successor command is `azdo-cli-axi issue relation <story-1-id> --relation-action add --relation-type successor --target-id <story-2-id> --org "$ORG_URL" --project "$PROJECT"`; add one direction only.
 - **Read relations**: `azdo-cli-axi spec relation <feature-id> --relation-action show --org "$ORG_URL" --project "$PROJECT"` or `azdo-cli-axi issue relation <id> --relation-action show --org "$ORG_URL" --project "$PROJECT"`.
-- **Close**: post the explanation first, then use `azdo-cli-axi issue close <id> --org "$ORG_URL" --project "$PROJECT"` or `azdo-cli-axi spec close <id> --org "$ORG_URL" --project "$PROJECT"`. Both set `Removed`. Normal completion uses `azdo-cli-axi issue state <id> --state "Done" --org "$ORG_URL" --project "$PROJECT"` or `azdo-cli-axi spec state <id> --state "Released" --org "$ORG_URL" --project "$PROJECT"`.
+- **Close**: post the explanation first, then set the confirmed rejected/out-of-scope state with `azdo-cli-axi issue state <id> --state "<User Story rejected state>" --org "$ORG_URL" --project "$PROJECT"` or `azdo-cli-axi spec state <id> --state "<Feature rejected state>" --org "$ORG_URL" --project "$PROJECT"`. Use `issue/spec close` only when the confirmed rejected state is `Removed`. Normal completion uses `azdo-cli-axi issue state <id> --state "<User Story normal-completion state>" --org "$ORG_URL" --project "$PROJECT"` or `azdo-cli-axi spec state <id> --state "<Feature normal-completion state>" --org "$ORG_URL" --project "$PROJECT"`.
 
-Set `ORG_URL` to the Azure DevOps organization URL and `PROJECT` to the project name. For PR commands, also set `REPOSITORY`. Always pass both context flags.
+Use the confirmed organization and project from **Azure DevOps context** above. For PR commands, also set `REPOSITORY`. Always pass both context flags.
 
 ## Pull requests as a triage surface
 
@@ -51,4 +76,4 @@ Used by `/wayfinder`. The map is a Feature with child User Stories.
 - **Blocking**: add a `predecessor` relation from the blocked ticket to its blocker. The reciprocal relation is the successor.
 - **Frontier**: choose the first unassigned child whose predecessors are all in terminal states.
 - **Claim**: `azdo-cli-axi issue edit <id> --assigned-to "<assignee>" --org "$ORG_URL" --project "$PROJECT"`.
-- **Resolve**: comment, set the User Story to `Done`, and update the map Feature with `spec edit`. For out-of-scope work, comment, close the User Story, and set it to `Removed`.
+- **Resolve**: comment, set the User Story to its confirmed normal-completion state, and update the map Feature with `spec edit`. For out-of-scope work, comment and set it to its confirmed rejected/out-of-scope state.
