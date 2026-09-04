@@ -27,16 +27,17 @@ All of it is committed markdown. There is no user-level or global mode: the conf
 
 ## The setup decisions
 
-It leads each section with the recommended answer, and skips whatever exploration already settled. Most runs are two confirmations and done; Azure DevOps adds context and process-state confirmations.
+It leads each section with the recommended answer, and skips whatever exploration already settled. Most runs are two confirmations and done; Azure DevOps adds context, team, and process-state confirmations.
 
 | Decision | What it proposes | When it actually asks |
 | --- | --- | --- |
 | **Issue tracker** | the one matching your `git remote` | always: this is the one real choice |
 | **Triage labels** | keep the five canonical names (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`) | only if the `triage` skill is installed |
+| **Azure DevOps team** | the team returned by `azdo-cli-axi board teams`, whose current iteration receives newly created work | only when Azure DevOps is selected |
 | **Azure DevOps process** | the states returned by `azdo-cli-axi board states`, with normal-completion and rejected/out-of-scope mappings | only when Azure DevOps is selected |
 | **Domain docs** | single-context: one `CONTEXT.md` plus `docs/adr/` at the root | only if it spots monorepo signals, and then it offers a multi-context `CONTEXT-MAP.md` |
 
-For Azure DevOps, the setup derives the organization and project from the Azure remote when possible and asks the user to validate them. It then reads User Story and Feature states separately, asks the user to confirm or correct each process, and stores the complete confirmed state/category tables and mappings in `docs/agents/issue-tracker.md`. Later skill runs use that configuration rather than querying Azure again.
+For Azure DevOps, the setup derives the organization and project from the Azure remote when possible and asks the user to validate them. It then discovers the project's teams, asks the user to confirm which team's sprint should receive new work, reads User Story and Feature states separately, asks the user to confirm or correct each process, and stores the complete confirmed team and state/category tables and mappings in `docs/agents/issue-tracker.md`. The current iteration is deliberately not stored because it changes over time: creation workflows query the confirmed team's current iteration immediately before creating a Feature or User Story. Other skill runs use the saved configuration rather than querying Azure again.
 
 The tracker options:
 

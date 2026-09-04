@@ -8,6 +8,7 @@ The setup skill fills this section with values confirmed for this project. Use t
 
 - **Organization**: `<ORG_URL>`
 - **Project**: `<PROJECT>`
+- **Team**: `<TEAM_NAME>` (`<TEAM_ID>`)
 
 ### User Story process
 
@@ -27,10 +28,30 @@ The setup skill fills this section with values confirmed for this project. Use t
 - **Normal completion**: `<confirmed state>`
 - **Rejected or out of scope**: `<confirmed state>`
 
+## Iteration assignment
+
+The current iteration is team-specific and changes over time. Do not save a fixed iteration path in this file. Before creating a Feature or User Story, resolve the current iteration for the confirmed team:
+
+```bash
+azdo-cli-axi board sprints \
+  --team "<TEAM_ID>" \
+  --fields id,name,path,attributes.timeFrame \
+  --full \
+  --org "$ORG_URL" \
+  --project "$PROJECT"
+```
+
+Select the unique row whose `timeFrame` is `current` and pass its `path` as `--iteration`. Resolve it once per publication batch and reuse the same path for a Feature and its User Stories.
+
+- Do not use `board iterations` to determine the current iteration; it only lists project iteration paths.
+- Do not hard-code an iteration path.
+- If there is no unique current iteration, stop and ask the user instead of guessing.
+- An explicit user-requested iteration overrides this default.
+
 ## Conventions
 
-- **Create an issue**: `azdo-cli-axi issue create --title "..." --body "..." --org "$ORG_URL" --project "$PROJECT"`. An issue is a User Story. Use a heredoc for multi-line bodies.
-- **Create a spec**: `azdo-cli-axi spec create --title "..." --body "..." --org "$ORG_URL" --project "$PROJECT"`. A spec is a Feature.
+- **Create an issue**: resolve the current iteration as described above, then run `azdo-cli-axi issue create --title "..." --body "..." --iteration "<CURRENT_ITERATION_PATH>" --org "$ORG_URL" --project "$PROJECT"`. An issue is a User Story. Use a heredoc for multi-line bodies.
+- **Create a spec**: resolve the current iteration as described above, then run `azdo-cli-axi spec create --title "..." --body "..." --iteration "<CURRENT_ITERATION_PATH>" --org "$ORG_URL" --project "$PROJECT"`. A spec is a Feature.
 - **Read an issue**: `azdo-cli-axi issue view <id> --expand none --fields "System.Id,System.Title,System.State,System.Tags,System.Description" --org "$ORG_URL" --project "$PROJECT"`. Fetch comments with `azdo-cli-axi api --area wit --resource comments --route-parameters "project=$PROJECT" --route-parameters "workItemId=<id>" --query-parameters "format=0" --api-version "7.1-preview" --jq "comments[].{createdDate: createdDate, createdBy: createdBy.displayName, text: text}" --full --org "$ORG_URL" --project "$PROJECT"`.
 - **Read a spec**: `azdo-cli-axi spec view <id> --expand none --fields "System.Id,System.Title,System.State,System.Tags,System.Description" --org "$ORG_URL" --project "$PROJECT"`, with the same comments API.
 - **List issues**: `azdo-cli-axi issue list --state "<User Story state>" --limit 50 --org "$ORG_URL" --project "$PROJECT"`.
@@ -71,8 +92,8 @@ Run `issue/spec view`, then fetch discussions with the comments API.
 
 Used by `/wayfinder`. The map is a Feature with child User Stories.
 
-- **Map**: `azdo-cli-axi spec create --title "..." --body "..." --tag "wayfinder:map" --org "$ORG_URL" --project "$PROJECT"`.
-- **Child ticket**: create a User Story with `azdo-cli-axi issue create --title "..." --body "..." --tag "wayfinder:<type>" --org "$ORG_URL" --project "$PROJECT"`, then link it with the parent / child command above.
+- **Map**: resolve the current iteration, then run `azdo-cli-axi spec create --title "..." --body "..." --iteration "<CURRENT_ITERATION_PATH>" --tag "wayfinder:map" --org "$ORG_URL" --project "$PROJECT"`.
+- **Child ticket**: create a User Story in the same resolved iteration with `azdo-cli-axi issue create --title "..." --body "..." --iteration "<CURRENT_ITERATION_PATH>" --tag "wayfinder:<type>" --org "$ORG_URL" --project "$PROJECT"`, then link it with the parent / child command above.
 - **Blocking**: add a `predecessor` relation from the blocked ticket to its blocker. The reciprocal relation is the successor.
 - **Frontier**: choose the first unassigned child whose predecessors are all in terminal states.
 - **Claim**: `azdo-cli-axi issue edit <id> --assigned-to "<assignee>" --org "$ORG_URL" --project "$PROJECT"`.
