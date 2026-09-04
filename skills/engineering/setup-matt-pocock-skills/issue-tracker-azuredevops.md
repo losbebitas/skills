@@ -30,20 +30,26 @@ The setup skill fills this section with values confirmed for this project. Use t
 
 ## Iteration assignment
 
-The current iteration is team-specific and changes over time. Do not save a fixed iteration path in this file. Before creating a Feature or User Story, resolve the current iteration for the confirmed team:
+The current iteration is team-specific and changes over time. Do not save a fixed iteration path in this file. Before creating a Feature or User Story, resolve the current iteration for the confirmed team with the server-side current-iteration filter:
 
 ```bash
-azdo-cli-axi board sprints \
-  --team "<TEAM_ID>" \
-  --fields path,attributes.timeFrame \
-  --full \
+azdo-cli-axi api \
+  --area work \
+  --resource iterations \
+  --route-parameters "project=$PROJECT" \
+  --route-parameters "team=<TEAM_ID>" \
+  --query-parameters '$timeframe=current' \
+  --api-version "7.1-preview" \
+  --http-method GET \
+  --jq 'value[].path' \
   --org "$ORG_URL" \
   --project "$PROJECT"
 ```
 
-Select the unique row whose `timeFrame` is `current` and pass its `path` as `--iteration`. Resolve it once per publication batch and reuse the same path for a Feature and its User Stories.
+The command returns only the current iteration path. Require exactly one returned path and pass it as `--iteration`. Resolve it once per publication batch and reuse the same path for a Feature and its User Stories.
 
 - Do not use `board iterations` to determine the current iteration; it only lists project iteration paths.
+- Do not query the complete sprint list when creating work; the API filter above is the token-minimal lookup.
 - Do not hard-code an iteration path.
 - If there is no unique current iteration, stop and ask the user instead of guessing.
 - An explicit user-requested iteration overrides this default.
