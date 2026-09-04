@@ -10,9 +10,20 @@ import { fileURLToPath } from "node:url";
 const repo = join(dirname(fileURLToPath(import.meta.url)), "..");
 const pluginPath = join(repo, ".claude-plugin", "plugin.json");
 
-const { version } = JSON.parse(readFileSync(join(repo, "package.json"), "utf8"));
+function parseJson(text, filePath) {
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    console.error(`Could not parse JSON in ${filePath}: ${reason}`);
+    process.exit(1);
+  }
+}
+
+const packagePath = join(repo, "package.json");
+const { version } = parseJson(readFileSync(packagePath, "utf8"), packagePath);
 const source = readFileSync(pluginPath, "utf8");
-const plugin = JSON.parse(source);
+const plugin = parseJson(source, pluginPath);
 
 if (plugin.version === version) {
   console.log(`plugin.json version is ${version} (already in sync)`);
@@ -32,7 +43,7 @@ const updated = source.replace(
   `$1${version}$2`,
 );
 
-if (JSON.parse(updated).version !== version) {
+if (parseJson(updated, pluginPath).version !== version) {
   console.error(`Could not find a version field to replace in ${pluginPath}.`);
   process.exit(1);
 }
